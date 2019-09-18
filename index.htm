@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Simple Map</title>
+		<meta name="viewport" content="initial-scale=1.0">
+		<meta charset="utf-8">
+		<style>
+		  #map {
+			height: 100%;
+		  }
+		  html, body {
+			height: 100%;
+			margin: 0;
+			padding: 0;
+		  }
+		</style>
+		<!-- Inclui o arquivo fixes.json, onde estão localizados todos os pontos fixos -->
+		<script type="text/javascript" src="fixes.json"></script>
+	</head>
+	
+	<body>
+
+		<div id="map"></div>
+		<script>
+		
+		var map;
+		var markers = [];
+		var showmarkers = true;
+		
+		function initMap() {
+			//Cria um novo objeto mapa no elemento DIV map
+			map = new google.maps.Map(document.getElementById('map'), {
+				// Centraliza o mapa inicial nas coordenadas selecionadas, no caso abaixo, centro de São Paulo
+				center: {lat: -23.555700, lng: -46.633863},
+				// Determina o nível de zoom
+				zoom: 12,
+			});
+			
+			//Loop para varrer o arquivo JSON, buscando cada cooordenada
+			for (var i = 0; i < fixes.length; i++) {
+				//Define data como os dados de cada elemento JSON
+				var data = fixes[i];
+				/*No exemplo abaixo estou limitando a leitura dos pontos entre as latitudes -22 à -25, e longitudes -45 à -48, 
+				pois carregar todos os 184 mil pontos deixou o carregamento lento. Meu próximo passo é forçar a leitura dos pontos
+				limitada a região de visualização, e ir carregando de acordo que o mapa for movimento*/
+				if (data.lat < -22 && data.lat > -25 && data.lng < -45 && data.lng > -48){
+				
+					//Define o desenho do triângulo que indica o fixo
+					var pontoFixo = {
+						//Define os pontos da figura, no caso 3 pontos para formar um triângulo
+						path: 'M 0,20 10,20 5,10 z',
+						//Define a cor de preenchimento
+						fillColor: 'yellow',
+						//Define a opacidade do preenchimento, no caso transparente
+						fillOpacity: 0.0,
+						//Define a escala da imagem
+						scale: 1,
+						//Define a cor da borda
+						strokeColor: 'blue',
+						//Define a espessura da borda
+						strokeWeight: 3,
+						//Define a rotação da imagem em °
+						rotation: 0
+					};
+				
+					//Inclui o marcador no mapa
+					var marker = new google.maps.Marker({
+						//Posição do marcador, dado pela latitude e longitude
+						position: {lat: data.lat, lng: data.lng},
+						//Objeto map para o qual o marcador será adicionado
+						map: map,
+						//Define a figura que irá representar o marcador
+						icon: pontoFixo,
+						//Define a legenda do marcador
+						label: data.title,
+						//Define a descrição ao passar o mouse em cima do ponto
+						title: data.description
+					});
+					
+				}
+
+			}
+			
+		}
+		
+		</script>
+		<!-- Na linha abaixo a chave para funcionamento da API. Necessário cadastro no Google Cloud - Java Script Maps API -->
+		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCr5g6R40R7dXXW4vzvDSXhpQxVmbQ6g-4&callback=initMap" async defer></script>
+  </body>
+</html>
