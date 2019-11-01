@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Simple Map</title>
+		<title>Fixos da aviação</title>
 		<meta name="viewport" content="initial-scale=1.0">
 		<meta charset="utf-8">
 		<style>
@@ -19,13 +19,19 @@
 	</head>
 	
 	<body>
-
 		<div id="map"></div>
 		<script>
 		
+		//Instância do mapa
 		var map;
+		//Cria um array onde estarão todos os marcadores de waypoints
 		var markers = [];
-		var showmarkers = true;
+		
+		//Determina as coordenadas máximas e mínimas iniciais
+		var minLat = -23.759004987540937;
+		var maxLat = -23.350819213685124;
+		var minLng = -47.07262947949221;
+		var maxLng = -46.19372322949221;
 		
 		function initMap() {
 			//Cria um novo objeto mapa no elemento DIV map
@@ -36,55 +42,102 @@
 				zoom: 12,
 			});
 			
-			//Loop para varrer o arquivo JSON, buscando cada cooordenada
-			for (var i = 0; i < fixes.length; i++) {
-				//Define data como os dados de cada elemento JSON
-				var data = fixes[i];
-				/*No exemplo abaixo estou limitando a leitura dos pontos entre as latitudes -22 à -25, e longitudes -45 à -48, 
-				pois carregar todos os 184 mil pontos deixou o carregamento lento. Meu próximo passo é forçar a leitura dos pontos
-				limitada a região de visualização, e ir carregando de acordo que o mapa for movimento*/
-				if (data.lat < -22 && data.lat > -25 && data.lng < -45 && data.lng > -48){
-				
-					//Define o desenho do triângulo que indica o fixo
-					var pontoFixo = {
-						//Define os pontos da figura, no caso 3 pontos para formar um triângulo
-						path: 'M 0,20 10,20 5,10 z',
-						//Define a cor de preenchimento
-						fillColor: 'yellow',
-						//Define a opacidade do preenchimento, no caso transparente
-						fillOpacity: 0.0,
-						//Define a escala da imagem
-						scale: 1,
-						//Define a cor da borda
-						strokeColor: 'blue',
-						//Define a espessura da borda
-						strokeWeight: 3,
-						//Define a rotação da imagem em °
-						rotation: 0
-					};
-				
-					//Inclui o marcador no mapa
-					var marker = new google.maps.Marker({
-						//Posição do marcador, dado pela latitude e longitude
-						position: {lat: data.lat, lng: data.lng},
-						//Objeto map para o qual o marcador será adicionado
-						map: map,
-						//Define a figura que irá representar o marcador
-						icon: pontoFixo,
-						//Define a legenda do marcador
-						label: data.title,
-						//Define a descrição ao passar o mouse em cima do ponto
-						title: data.description
-					});
-					
-				}
-
-			}
+			//Carrega os pontos pela primeira vez
+			loadPoints();
 			
+			//Adiciona um Listener para observar quando o mapa terminar de ser arrastado
+			map.addListener('dragend', function() {
+				//Chama função para recarregar os marcadores
+				reloadPoints();
+			});
+
+			//Adiciona um Listener para observar quando o mapa tem o zoom alterado
+			map.addListener('zoom_changed', function() {
+				//Chama função para recarregar os marcadores
+				reloadPoints();
+			});
+
+		}
+		
+		function reloadPoints(){
+			//Determina as longitudes e latitudes mínimas e máximas visíveis na tela
+			//Latitude mínima (South)
+			minLat = map.getBounds().getSouthWest().lat();
+			//Latitude máxima (North)
+			maxLat = map.getBounds().getNorthEast().lat();
+			//Longitude mínima (West)
+			minLng = map.getBounds().getSouthWest().lng();
+			//Longitude máxima (East)
+			maxLng = map.getBounds().getNorthEast().lng();
+			//Chama função para limpar os marcadores da tela
+			resetPoints();
+			//Chama função para carregar pontos novos na tela
+			loadPoints();
+		}
+		
+		function loadPoints() {
+			
+			//Exibe os pontos somente se o zoom for maior igual à 10
+			if (map.getZoom() >= 10){
+
+				//Loop para varrer o arquivo JSON, buscando cada cooordenada
+				for (var i = 0; i < fixes.length; i++) {
+					//Define data como os dados de cada elemento JSON
+					var data = fixes[i];
+
+					//Verifica se os pontos estão entre as latitudes e longitudes mínimas e máximas na tela
+					if (data.lat < maxLat && data.lat > minLat && data.lng < maxLng && data.lng > minLng){
+					
+						//Define o desenho do triângulo que indica o fixo
+						var pontoFixo = {
+							//Define os pontos da figura, no caso 3 pontos para formar um triângulo
+							path: 'M 0,20 10,20 5,10 z',
+							//Define a cor de preenchimento
+							fillColor: 'yellow',
+							//Define a opacidade do preenchimento, no caso transparente
+							fillOpacity: 0.0,
+							//Define a escala da imagem
+							scale: 1,
+							//Define a cor da borda
+							strokeColor: 'blue',
+							//Define a espessura da borda
+							strokeWeight: 3,
+							//Define a rotação da imagem em °
+							rotation: 0
+						};
+					
+						//Inclui o marcador no mapa
+						var marker = new google.maps.Marker({
+							//Posição do marcador, dado pela latitude e longitude
+							position: {lat: data.lat, lng: data.lng},
+							//Objeto map para o qual o marcador será adicionado
+							map: map,
+							//Define a figura que irá representar o marcador
+							icon: pontoFixo,
+							//Define a legenda do marcador
+							label: data.title,
+							//Define a descrição ao passar o mouse em cima do ponto
+							title: data.description
+						});
+						
+						//Adiciona o marcador ao array markers
+						markers.push(marker);
+						
+					}
+				}
+			}
+		}
+		
+		function resetPoints(){
+			//Executa uma varredura em todos os marcadores visíveis na tela
+			for (var j = 0; j < markers.length; j++) {
+				//Limpa o marcador da tela
+				markers[j].setMap(null);
+			}
 		}
 		
 		</script>
 		<!-- Na linha abaixo a chave para funcionamento da API. Necessário cadastro no Google Cloud - Java Script Maps API -->
-		<script src="https://maps.googleapis.com/maps/api/js?key=[Key-API]&callback=initMap" async defer></script>
+		<script src="https://maps.googleapis.com/maps/api/js?key=[keyapi]callback=initMap" async defer></script>
   </body>
 </html>
